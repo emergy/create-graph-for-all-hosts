@@ -137,7 +137,7 @@ $config->{showtriggers} = 0 unless $config->{showtriggers};
 $config->{showtriggers} = 0 unless $config->{showtriggers};
 $config->{'min-graph-value'} = 0 unless $config->{'min-graph-value'};
 $config->{'max-graph-value'} = 100 unless $config->{'max-graph-value'};
-$config->{'min-graph-type'} = 1 unless $config->{'min-graph-type'};
+$config->{'min-graph-type'} = 1 unless defined($config->{'min-graph-type'});
 $config->{'max-graph-type'} = 0 unless $config->{'max-graph-type'};
 
 usage() unless $config->{item};

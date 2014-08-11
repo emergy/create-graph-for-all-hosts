@@ -1,0 +1,419 @@
+#!/usr/bin/env perl
+
+=head1 NAME
+
+    create-graph - Make graph inclusive items from all hosts linked selected template
+
+
+=head1 SYNOPSIS
+
+    create-graph --template <name> --item <name> [ -r] [--graph-name <name>] [--dark-colors]
+                [--add] [--width <size> --height <size>] [--graphtype 1|2] [--drawtype 0-5]
+                [--calcfunction 1|4|2|7] [--showtriggers] [--delete]
+
+=head2 Options
+
+=over
+
+=item --template
+
+Template name
+
+=item --item
+
+Item name
+
+=item --regexp (-r)
+
+Item name is regexp
+
+=item --graph-name
+
+Graf name. If not set use item name
+
+=item --dark-colors
+
+Darck colors theme
+
+=item --add
+
+Add to exist graph hosts/items from other template
+
+=item --width
+
+Graph width
+
+=item --height
+
+Graph height
+
+=item --graphtype
+
+Graph type: 0=normal, 1=stacked
+Default: 0
+
+=item --min-graph-type
+
+0=calculated, 1=fixed
+Default: 1
+
+=item --max-graph-type
+
+0=calculated, 1=fixed
+Default: 0
+
+=item --min-graph-value
+
+Default: 0
+
+=item --max-graph-value
+
+Default: 100
+
+=item --drawtype
+
+0=line, 1=filled, 2=boldline, 3=dot, 4=dashed, 5=gradient
+
+=item --calcfunction
+
+1=min, 4=max, 2=avg, 7=all Default: 2
+
+=item --showtriggers
+
+Show triggers
+
+=item --delete
+
+Delete graph
+
+=back
+
+=cut
+
+use strict;
+use warnings;
+use Data::Dumper;
+use FindBin '$RealBin';
+use lib "$RealBin/../lib";
+use Net::Zabbix;
+use Getopt::Long;
+use config;
+use Pod::Usage;
+
+my $config = config->new("$RealBin/../etc/config");
+
+Getopt::Long::Configure ("bundling");
+GetOptions(
+    "help|h|?" => sub { usage() },
+    "verbose|v+" => \$config->{verbose},
+    "debug" => \$config->{debug},
+    "template|t=s" => \$config->{template},
+    "item|i=s" => \$config->{item},
+    "graph-name|g=s" => \$config->{'graph-name'},
+    "dark-colors" => \$config->{'dark-colors'},
+    "add" => \$config->{add},
+    "height=s" => \$config->{height},
+    "width=s" => \$config->{width},
+    "graphtype=s" => \$config->{graphtype},
+    "drawtype=s" => \$config->{drawtype},
+    "calcfunction=s" => \$config->{calcfunction},
+    "showtriggers" => \$config->{showtriggers},
+    "regexp|r" => \$config->{regexp},
+    "delete" => \$config->{delete},
+    "onehost" => \$config->{onehost},
+    "min-graph-value=s" => \$config->{'min-graph-value'},
+    "max-graph-value=s" => \$config->{'max-graph-value'},
+    "min-graph-type=s" => \$config->{'min-graph-type'},
+    "max-graph-type=s" => \$config->{'max-graph-type'},
+    
+);
+
+$config->{width} = 800 unless $config->{width};
+$config->{height} = 200 unless $config->{height};
+$config->{graphtype} = 0 unless $config->{graphtype};
+$config->{drawtype} = 0 unless $config->{drawtype};
+$config->{calcfunction} = 7 unless $config->{calcfunction};
+$config->{showtriggers} = 0 unless $config->{showtriggers};
+$config->{showtriggers} = 0 unless $config->{showtriggers};
+$config->{'min-graph-value'} = 0 unless $config->{'min-graph-value'};
+$config->{'max-graph-value'} = 100 unless $config->{'max-graph-value'};
+$config->{'min-graph-type'} = 1 unless $config->{'min-graph-type'};
+$config->{'max-graph-type'} = 0 unless $config->{'max-graph-type'};
+
+usage() unless $config->{item};
+usage() unless $config->{template};
+$config->{'graph-name'} = $config->{item} unless $config->{'graph-name'};
+
+my $colors = {
+    dark => [
+        "5299AD", # blue1
+        "5D549A", # violet
+        "87B457", # green
+        "CF545E", # red
+        "CDDA13", # lemon
+        "5DAE99", # turquise
+        "DD844C", # orange
+        "AE5C8A", # mauve
+        "BD9F83", # ltbrown
+        "6B9BD4", # blue2
+        "B75F73", # red-brown
+        "646560", # kaky
+        "335098", # deepblue
+        "5FBFDB", # bleu
+        "D1CE85", # yellow
+        "909090", # grey
+        "A16254", # brown
+        "E8678D", # pink
+        "62B55A", # deepgreen
+        "A599AD", # greypurple
+        "6A5DD9", # violet2
+    ],
+
+    light => [
+        "98D6E7", # blue1
+        "9E7EDF", # violet
+        "BDDA83", # green
+        "EF747E", # red
+        "EDFA33", # lemon
+        "7EC392", # tuquise
+        "EDA46C", # orange
+        "DF93D7", # mauve
+        "E2BB91", # ltbrown
+        "A0CBEA", # blue2
+        "CB868B", # red-brown
+        "77897D", # kaky
+        "5370B8", # deepblue
+        "76DAF7", # bleu
+        "EAD770", # yellow
+        "AEAEAE", # grey
+        "B97A6F", # brown
+        "E8849D", # pink
+        "95D36E", # deepgreen
+        "B7AACF", # greypurple
+        "8A7DF9", # violet2
+    ],
+    count => -1,
+    theme => 'light',
+};
+
+$colors->{'theme'} = 'dark' if $config->{'dark-colors'};
+
+my $z = Net::Zabbix->new(
+     $config->{'zabbix-url'},
+     $config->{'zabbix-username'},
+     $config->{'zabbix-password'},
+);
+
+print "Get template \"$config->{template}\" ID\n";
+my $template_id = get_template_id_by_name($config->{template});
+print "Template id: $template_id\n\n";
+
+print "Get hosts linked this template\n";
+my $hosts = get_hosts_linked_to_template($template_id);
+
+if ($#$hosts < 0) {
+    print "Can't found hosts linked to this template\n";
+    exit 1;
+}
+
+# Sort and show all found hosts
+my @host_list = sort { $a->{host} cmp $b->{host} } @$hosts;
+print "Found this hosts:\n";
+print $_->{name} . "\n" foreach (@host_list);
+print "\n";
+
+my @hostid_list = map { $_ = $_->{hostid} } @host_list;
+
+if ($config->{onehost}) {
+    foreach (@hostid_list) {
+        create_graph([$_]);
+    }
+} else {
+    create_graph(\@hostid_list);
+}
+
+sub create_graph {
+    my ($hostid_list) = @_;
+
+    print "Get items from this hosts\n";
+    my $item_list = get_items($hostid_list);
+    #print Dumper($item_list);exit;
+
+    print "Make items list\n";
+    
+    my $nextcolor = sub {
+        $colors->{count}++;
+        $colors->{count} = 0 if $colors->{count} > $#{$colors->{$colors->{theme}}};
+        return $colors->{count};
+    };
+    
+    my @items = map {
+        $_ = {
+            itemid => $_->{itemid},
+            color => $colors->{$colors->{theme}}[&$nextcolor],
+            calc_fnc => $config->{calcfunction},
+            drawtype => $config->{drawtype},
+        };
+    } @$item_list;
+    
+    #print Dumper(\@items);
+    my $filter_opts = {
+        name => $config->{'graph-name'},
+    };
+
+    if ($config->{onehost}) {
+        $filter_opts->{hostid} = $hostid_list;
+    }
+
+    my $graph_list = $z->get('graph', {
+        filter => $filter_opts,
+    });
+
+    if ($config->{add}) {
+        if ($#{$graph_list->{result}} >= 0) {
+            print "Get graph items\n";
+            my $items_list = $z->get('graphitem', {
+                graphids => $graph_list->{result}->[0]->{graphid},
+            });
+    
+            if ($#{$items_list->{result}} >=0) {
+                foreach (@{$items_list->{result}}) {
+                    push @items, {
+                        itemid => $_->{itemid},
+                        color => $colors->{$colors->{theme}}[&$nextcolor],
+                    };
+                }
+            }
+    
+            print "Update graph\n";
+    
+            my $update_graph = $z->update('graph', {
+                graphid => $graph_list->{result}->[0]->{graphid},
+                name => $config->{'graph-name'},
+                gitems => \@items,
+                width => $config->{width},
+                height => $config->{height},
+                graphtype => $config->{graphtype},
+                showtriggers => $config->{showtriggers},
+                yaxismin => $config->{'min-graph-value'},
+                yaxismax => $config->{'max-graph-value'},
+                ymin_type => $config->{'min-graph-type'},
+                ymax_type => $config->{'max-graph-type'},
+            });
+    
+            #print Dumper($update_graph);
+        } else {
+            print "Graph not found\n";
+            exit 1;
+        }
+    
+    } else {
+    
+        if ($#{$graph_list->{result}} >= 0) {
+            print "Graph exist ID(s): ";
+            my @del_list = map { $_ = $_->{graphid} } @{$graph_list->{result}};
+            print join(", ", @del_list) . "\n";
+            print "Delete graph(s)\n";
+            my $delete_graph = $z->delete('graph', \@del_list); 
+            exit 0 if $config->{delete};
+        }
+    
+        print "Create new graph\n";
+        
+        my $create_graph = $z->create('graph', {
+            name => $config->{'graph-name'},
+            width => $config->{width},
+            height => $config->{height},
+            gitems => \@items,
+            graphtype => $config->{graphtype},
+            showtriggers => $config->{showtriggers},
+            yaxismin => $config->{'min-graph-value'},
+            yaxismax => $config->{'max-graph-value'},
+            ymin_type => $config->{'min-graph-type'},
+            ymax_type => $config->{'max-graph-type'},
+        });
+    
+        if ($create_graph->{result} && $create_graph->{result}->{graphids}) {
+            print "Graphid: " . shift(@{$create_graph->{result}->{graphids}}) . "\n";
+        } else {
+            if ($create_graph->{error}) {
+                $create_graph->{error}->{message} =~ s/\.$//;
+                printf("%s: %s\n", $create_graph->{error}->{message}, $create_graph->{error}->{data});
+            } else {
+                print Dumper($create_graph) . "\n";
+            }
+            exit 1;
+        }
+    }
+}
+
+sub get_items {
+    my ($hosts) = @_;
+
+    my $filter_opts = {};
+
+    unless ($config->{regexp}) {
+        $filter_opts = {
+            name => $config->{item},
+        };
+    }
+
+    my $item_list = $z->get("item", {
+        hostids => $hosts,
+        filter => $filter_opts,
+    });
+
+    if ($#{$item_list->{result}} >= 0) {
+        if ($config->{regexp}) {
+            my @r = grep { ($_->{name} =~ /$config->{item}/) && ($_->{name} !~ /.*{#.*}/) } @{$item_list->{result}};
+            return \@r;
+        } else {
+            return $item_list->{result};
+        }
+    } else {
+        print "Can't found items\n";
+        exit 1;
+    }
+}
+
+
+
+sub get_hosts_linked_to_template {
+    my ($template_id) = @_;
+
+    my $host_list = $z->get('host', {
+        templateids => [$template_id],
+    });
+
+    if ($#{$host_list->{result}} >= 0) {
+        return $host_list->{result};
+    } else {
+        print "Can't found hosts linked to template $template_id\n";
+    }
+
+    print Dumper($host_list);
+}
+
+
+sub get_template_id_by_name {
+    my ($template_name) = @_;
+
+    my $template_list = $z->get("template", {
+        filter => {
+            name => $template_name,
+        },
+    });
+    
+    if ($#{$template_list->{result}} == 0) {
+        return $template_list->{result}->[0]->{templateid};
+    } else {
+        return "Can't find template: $config->{template}\n";
+        exit 1;
+    }
+}
+
+
+sub usage {
+    pod2usage(1);
+    exit;
+}

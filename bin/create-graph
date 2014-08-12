@@ -316,7 +316,7 @@ sub create_graph {
             print "Delete graph(s)\n";
             my $delete_graph = $z->delete('graph', \@del_list); 
             print Dumper($delete_graph) . "\n";
-            exit 0 if $config->{delete};
+            next 0 if $config->{delete};
         }
     
         print "Create new graph\n";

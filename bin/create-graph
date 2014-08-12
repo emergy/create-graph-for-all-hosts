@@ -315,12 +315,12 @@ sub create_graph {
             print join(", ", @del_list) . "\n";
             print "Delete graph(s)\n";
             my $delete_graph = $z->delete('graph', \@del_list); 
-            print Dumper($delete_graph) . "\n";
-            next 0 if $config->{delete};
         }
     
         print "Create new graph\n";
         
+        return 0 if $config->{delete};
+
         my $create_graph = $z->create('graph', {
             name => $config->{'graph-name'},
             width => $config->{width},

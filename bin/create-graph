@@ -317,9 +317,9 @@ sub create_graph {
             my $delete_graph = $z->delete('graph', \@del_list); 
         }
     
-        print "Create new graph\n";
-        
         return 0 if $config->{delete};
+        
+        print "Create new graph\n";
 
         my $create_graph = $z->create('graph', {
             name => $config->{'graph-name'},

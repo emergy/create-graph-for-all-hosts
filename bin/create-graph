@@ -134,7 +134,6 @@ $config->{graphtype} = 0 unless $config->{graphtype};
 $config->{drawtype} = 0 unless $config->{drawtype};
 $config->{calcfunction} = 7 unless $config->{calcfunction};
 $config->{showtriggers} = 0 unless $config->{showtriggers};
-$config->{showtriggers} = 0 unless $config->{showtriggers};
 $config->{'min-graph-value'} = 0 unless $config->{'min-graph-value'};
 $config->{'max-graph-value'} = 100 unless $config->{'max-graph-value'};
 $config->{'min-graph-type'} = 1 unless defined($config->{'min-graph-type'});

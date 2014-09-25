@@ -74,8 +74,6 @@ sub add_graph_to_screen {
             resourceid => $graph_id,
         }
     );
-
-    exit 0;
 }
 
 sub check_graph_exisit_in_screen {

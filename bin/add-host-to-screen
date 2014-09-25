@@ -59,7 +59,7 @@ sub add_graph_to_screen {
 
     my $update_screen = $z->update("screen",
         {
-            screenid => {screenid},
+            screenid => $screen->{screenid},
             vsize=> $x + 1,
             hsize => 2,
         }

@@ -44,11 +44,11 @@ for (my $i = 0; $i <= $#graph_list; $i++) {
     my $graph_id = get_graph_id($host_id, $graph_name);
     
     if ($graph_id) {
-        if (check_graph_exisit_in_screen($screen, $graph_id)) {
-            die "Graph \"$graph_name\" exist in screen\n";
-        } else {
+        #if (check_graph_exisit_in_screen($screen, $graph_id)) {
+            #die "Graph \"$graph_name\" exist in screen\n";
+        #} else {
             add_graph_to_screen($screen, $graph_id, $i, $y);
-        }
+        #}
     } else {
         die "Graph $graph_name not exist in host $host_name\n";
     }

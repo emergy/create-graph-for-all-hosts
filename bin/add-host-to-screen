@@ -37,9 +37,10 @@ my $screen = get_screen($screen_name);
 my $host_id = get_host_id($host_name);
 
 #print Dumper($screen);
-my ($x, $y) = get_new_place($screen->{screenitems});
+my $y = get_new_place($screen->{screenitems});
 
 for (my $i = 0; $i <= $#graph_list; $i++) {
+    print "\$i: $i\n";
     my $graph_name = $graph_list[$i];
     my $graph_id = get_graph_id($host_id, $graph_name);
     
@@ -47,6 +48,7 @@ for (my $i = 0; $i <= $#graph_list; $i++) {
         #if (check_graph_exisit_in_screen($screen, $graph_id)) {
             #die "Graph \"$graph_name\" exist in screen\n";
         #} else {
+            print "screen: $screen, g_id: $graph_id, x: $i, y: $y\n";
             add_graph_to_screen($screen, $graph_id, $i, $y);
         #}
     } else {
@@ -60,10 +62,12 @@ sub add_graph_to_screen {
     my $update_screen = $z->update("screen",
         {
             screenid => $screen->{screenid},
-            vsize=> $x + 1,
+            vsize=>  int($y + 1),
             hsize => 2,
         }
     );
+
+    print "\$update_screen: " . Dumper($update_screen);
 
     my $update_screenitem = $z->create("screenitem",
         {
@@ -81,6 +85,8 @@ sub add_graph_to_screen {
             resourceid => $graph_id,
         }
     );
+
+    print "\$update_screenitem: " . Dumper($update_screenitem);
 }
 
 sub check_graph_exisit_in_screen {
@@ -145,22 +151,31 @@ sub get_screen {
 
 sub get_new_place {
     my ($screenitems) = @_;
-    my @place = (0, 0);
+
+    my $max = 0;
 
     foreach (@$screenitems) {
-        if ($_->{y} > $place[1]) {
-            @place = ($_->{x}, $_->{y});
-        } elsif ($_->{y} == $place[1]) {
-            @place = ($_->{x}, $_->{y}) if $_->{x} > $place[0];
-        }
+        $max = $_->{y} if $max < $_->{y};
+
     }
 
-    if ($place[0] == 1) {
-        $place[0] = 0;
-        $place[1]++;
-    }
-
-    return @place;
+    return $max + 1;
+#     my @place = (0, 0);
+# 
+#     foreach (@$screenitems) {
+#         if ($_->{y} > $place[1]) {
+#             @place = ($_->{x}, $_->{y});
+#         } elsif ($_->{y} == $place[1]) {
+#             @place = ($_->{x}, $_->{y}) if $_->{x} > $place[0];
+#         }
+#     }
+# 
+#     if ($place[0] == 1) {
+#         $place[0] = 0;
+#         $place[1]++;
+#     }
+# 
+#     return @place;
 }
 
 

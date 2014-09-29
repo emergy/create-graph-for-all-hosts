@@ -6,7 +6,7 @@
 
 =head1 SYNOPSIS
 
-    add-host-to-screen <host name> [screen name]
+    add-host-to-screen <host name> <screen name> <graph name> [graph name]...
 
 =cut
 
@@ -20,10 +20,10 @@ use Pod::Usage;
 use Net::Zabbix;
 
 
-my ($host_name, $screen_name) = @ARGV;
+my ($host_name, $screen_name, @graph_list) = @ARGV;
 usage() unless $host_name;
 $screen_name = 'ds-orgins disks' unless $screen_name;
-my @graph_list = ("All disks utilization", "All disks await");
+@graph_list = ("All disks utilization", "All disks await") if $#graph_list < 0;
 
 my $config = config->new("$RealBin/../etc/config");
 
@@ -63,7 +63,7 @@ sub add_graph_to_screen {
         {
             screenid => $screen->{screenid},
             vsize=>  int($y + 1),
-            hsize => 2,
+            hsize => $#graph_list + 1,
         }
     );
 

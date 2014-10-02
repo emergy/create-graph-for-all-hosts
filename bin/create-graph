@@ -135,6 +135,7 @@ GetOptions(
     "max-graph-type=s" => \$config->{'max-graph-type'},
     "add-to-screen=s" => \$config->{screen},
     "screen-x=s" => \$config->{'screen-x'},
+    "host=s" => \$config->{host},
 );
 
 $config->{width} = 800 unless $config->{width};
@@ -149,6 +150,7 @@ $config->{'min-graph-type'} = 1 unless defined($config->{'min-graph-type'});
 $config->{'max-graph-type'} = 0 unless $config->{'max-graph-type'};
 
 usage() unless $config->{item};
+usage() unless $config->{host};
 usage() unless $config->{template};
 $config->{'graph-name'} = $config->{item} unless $config->{'graph-name'};
 
@@ -212,42 +214,26 @@ my $z = Net::Zabbix->new(
      $config->{'zabbix-password'},
 );
 
-print "Get template \"$config->{template}\" ID\n";
-my $template_id = get_template_id_by_name($config->{template});
-print "Template id: $template_id\n\n";
-
-print "Get hosts linked this template\n";
-my $hosts = get_hosts_linked_to_template($template_id);
-
-if ($#$hosts < 0) {
-    print "Can't found hosts linked to this template\n";
-    exit 1;
-}
-
-# Sort and show all found hosts
-my @host_list = sort { $a->{host} cmp $b->{host} } @$hosts;
-print "Found this hosts:\n";
-print $_->{name} . "\n" foreach (@host_list);
-print "\n";
-
-my @hostid_list = map { $_ = $_->{hostid} } @host_list;
-
-if ($config->{onehost}) {
-    foreach my $host_id (@hostid_list) {
-        my $graph_id = create_graph([$host_id]);
-
-        if ($graph_id) {
-            add_to_screen($graph_id) if $config->{screen};
-        } else {
-            print "No graph_id\n";
+my $get_host = $z->get("host",
+    {
+        filter => {
+            name => $config->{host},
         }
     }
-} else {
-    my $graph_id = create_graph(\@hostid_list);
+);
 
-    if ($graph_id) {
-        add_to_screen($graph_id) if $config->{screen};
-    }
+my $host_id;
+
+if ($get_host->{result}) {
+    $host_id = $get_host->{result}[0]->{hostid};
+} else {
+    die "Can't found host: $config->{host}\n";
+}
+
+my $graph_id = create_graph($host_id);
+
+if ($graph_id) {
+    add_to_screen($graph_id) if $config->{screen};
 }
 
 sub add_to_screen {
@@ -257,20 +243,27 @@ sub add_to_screen {
     my $screen = get_screen($config->{screen});
     print "\$screen: " . Dumper($screen);
 
-    my $y = get_new_place($screen->{screenitems});
-    print "\$y: " . Dumper($y);
+    my $y = get_new_place($screen->{screenitems}, $graph_id);
 
-    my $update_screen_opts = {
-        screenid => $screen->{screenid},
-        vsize => int($y + 1),
-    };
+    my $vsize = $y;
 
-    $update_screen_opts->{hsize} = int($x + 1) if $screen->{hsize} <= $x;
-    print "\$update_screen_opts: " . Dumper($update_screen_opts);
+    if ($x == 0) {
+        $y++;
+
+        my $update_screen_opts = {
+            screenid => $screen->{screenid},
+            vsize => $y + 1,
+        };
+
+        $update_screen_opts->{hsize} = int($x + 1) if $screen->{hsize} <= $x;
+        print "\$update_screen_opts: " . Dumper($update_screen_opts);
+    
+        my $update_screen = $z->update("screen", $update_screen_opts);
+        print "\$update_screen: " . Dumper($update_screen);
+    }
 
 
-    my $update_screen = $z->update("screen", $update_screen_opts);
-    print "\$update_screen: " . Dumper($update_screen);
+    print "\$x: $x, \$y: $y\n";
 
     my $update_screenitem = $z->create("screenitem",
         {
@@ -441,40 +434,6 @@ sub get_items {
 
 
 
-sub get_hosts_linked_to_template {
-    my ($template_id) = @_;
-
-    my $host_list = $z->get('host', {
-        templateids => [$template_id],
-    });
-
-    if ($#{$host_list->{result}} >= 0) {
-        return $host_list->{result};
-    } else {
-        print "Can't found hosts linked to template $template_id\n";
-    }
-
-    print Dumper($host_list);
-}
-
-
-sub get_template_id_by_name {
-    my ($template_name) = @_;
-
-    my $template_list = $z->get("template", {
-        filter => {
-            name => $template_name,
-        },
-    });
-    
-    if ($#{$template_list->{result}} == 0) {
-        return $template_list->{result}->[0]->{templateid};
-    } else {
-        return "Can't find template: $config->{template}\n";
-        exit 1;
-    }
-}
-
 sub get_screen {
     my ($screen_name) = @_;
 
@@ -493,16 +452,14 @@ sub get_screen {
 }
 
 sub get_new_place {
-    my ($screenitems) = @_;
-
+    my ($screenitems, $graph_id) = @_;
     my $max = 0;
 
     foreach (@$screenitems) {
         $max = $_->{y} if $max < $_->{y};
-
     }
 
-    return $max + 1;
+    return $max;
 }
 
 sub usage {

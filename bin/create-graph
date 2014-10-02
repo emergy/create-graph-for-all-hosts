@@ -85,6 +85,10 @@ Show triggers
 =item --delete
 
 Delete graph
+    
+=item --add-to-screen <screen name>
+
+Add graph to screen
 
 =back
 
@@ -125,7 +129,7 @@ GetOptions(
     "max-graph-value=s" => \$config->{'max-graph-value'},
     "min-graph-type=s" => \$config->{'min-graph-type'},
     "max-graph-type=s" => \$config->{'max-graph-type'},
-    
+    "add-to-screen=s" => \$config->{screen},
 );
 
 $config->{width} = 800 unless $config->{width};
@@ -225,10 +229,20 @@ my @hostid_list = map { $_ = $_->{hostid} } @host_list;
 
 if ($config->{onehost}) {
     foreach (@hostid_list) {
-        create_graph([$_]);
+        my $graph_id = create_graph([$_]);
+
+        if ($graph_id) {
+            add_to_screen($graph_id) if $config->{screen};
+        }
     }
 } else {
     create_graph(\@hostid_list);
+}
+
+sub add_to_screen {
+    my ($$graph_id) = @_;
+
+
 }
 
 sub create_graph {
@@ -334,7 +348,9 @@ sub create_graph {
         });
     
         if ($create_graph->{result} && $create_graph->{result}->{graphids}) {
-            print "Graphid: " . shift(@{$create_graph->{result}->{graphids}}) . "\n";
+            my $graph_id = shift(@{$create_graph->{result}->{graphids}});
+            print "Craph_id: $graph_id\n";
+            return $graph_id;
         } else {
             if ($create_graph->{error}) {
                 $create_graph->{error}->{message} =~ s/\.$//;

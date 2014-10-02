@@ -210,6 +210,9 @@ my $z = Net::Zabbix->new(
      $config->{'zabbix-password'},
 );
 
+my $screen = get_screen($config->{screen});
+print Dumper($screen);exit;
+
 print "Get template \"$config->{template}\" ID\n";
 my $template_id = get_template_id_by_name($config->{template});
 print "Template id: $template_id\n\n";
@@ -475,7 +478,7 @@ sub get_screen {
         }
     );
 
-    die "Get_screen[$screen_name]: " . Dumper($search_screen) if ! $#{$search_screen->{result}} == 0;
+    die "Get_screen['$screen_name']: " . Dumper($search_screen) if ! $#{$search_screen->{result}} == 0;
     return shift(@{$search_screen->{result}});
 }
 

@@ -90,6 +90,8 @@ Delete graph
 
 Add graph to screen
 
+=item --screen-x <width position on screen>
+
 =back
 
 =cut
@@ -130,6 +132,7 @@ GetOptions(
     "min-graph-type=s" => \$config->{'min-graph-type'},
     "max-graph-type=s" => \$config->{'max-graph-type'},
     "add-to-screen=s" => \$config->{screen},
+    "screen-x=s" => \$config->{'screen-x'},
 );
 
 $config->{width} = 800 unless $config->{width};
@@ -236,13 +239,44 @@ if ($config->{onehost}) {
         }
     }
 } else {
-    create_graph(\@hostid_list);
+    my $graph_id = create_graph(\@hostid_list);
+
+#     if ($graph_id) {
+#         add_to_screen($graph_id) if $config->{screen};
+#     }
 }
 
 sub add_to_screen {
-    my ($host_id, $graph_id) = @_;
+    my ($graph_id) = @_;
+    my $x = int($config->{'screen-x'} - 1);
 
+    my $screen = get_screen($config->{screen});
+    my $y = get_new_place($screen->{screenitems});
 
+    my $update_screen_opts = {
+        screenid => $screen->{screenid},
+        vsize => int($y + 1),
+    };
+
+    $update_screen_opts->{hsize} = int($x + 1) if $screen->{hsize} <= $x;
+    my $update_screen = $z->update("screen", $update_screen_opts);
+
+    my $update_screenitem = $z->create("screenitem",
+        {
+            x => $x,
+            y => $y,
+            screenid => $screen->{screenid},
+            sort_triggers => 0,
+            rowspan => 1,
+            colspan => 1,
+            resourcetype => 0,
+            style => 0,
+            dynamic => 0,
+            height => 100,
+            width => 500,
+            resourceid => $graph_id,
+        }
+    );
 }
 
 sub create_graph {
@@ -428,6 +462,35 @@ sub get_template_id_by_name {
     }
 }
 
+sub get_screen {
+    my ($screen_name) = @_;
+
+    my $search_screen = $z->get("screen",
+        {
+            filter => {
+                name => $screen_name,
+            },
+            output => 'extend',
+            selectScreenItems => 'extend',
+        }
+    );
+
+    die Dumper($search_screen) if ! $#{$search_screen->{result}} == 0;
+    return shift(@{$search_screen->{result}});
+}
+
+sub get_new_place {
+    my ($screenitems) = @_;
+
+    my $max = 0;
+
+    foreach (@$screenitems) {
+        $max = $_->{y} if $max < $_->{y};
+
+    }
+
+    return $max + 1;
+}
 
 sub usage {
     pod2usage(1);

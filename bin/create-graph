@@ -237,7 +237,7 @@ if ($config->{onehost}) {
         my $graph_id = create_graph([$host_id]);
 
         if ($graph_id) {
-            add_to_screen($host_id, $graph_id) if $config->{screen};
+            add_to_screen($graph_id) if $config->{screen};
         } else {
             print "No graph_id\n";
         }

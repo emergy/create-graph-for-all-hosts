@@ -106,6 +106,8 @@ use Getopt::Long;
 use config;
 use Pod::Usage;
 
+my $DEBUG = 1;
+
 my $config = config->new("$RealBin/../etc/config");
 
 Getopt::Long::Configure ("bundling");
@@ -236,14 +238,16 @@ if ($config->{onehost}) {
 
         if ($graph_id) {
             add_to_screen($host_id, $graph_id) if $config->{screen};
+        } else {
+            print "No graph_id\n";
         }
     }
 } else {
     my $graph_id = create_graph(\@hostid_list);
 
-#     if ($graph_id) {
-#         add_to_screen($graph_id) if $config->{screen};
-#     }
+    if ($graph_id) {
+        add_to_screen($graph_id) if $config->{screen};
+    }
 }
 
 sub add_to_screen {
@@ -251,7 +255,10 @@ sub add_to_screen {
     my $x = int($config->{'screen-x'} - 1);
 
     my $screen = get_screen($config->{screen});
+    print "\$screen: " . Dumper($screen);
+
     my $y = get_new_place($screen->{screenitems});
+    print "\$y: " . Dumper($y);
 
     my $update_screen_opts = {
         screenid => $screen->{screenid},
@@ -259,7 +266,11 @@ sub add_to_screen {
     };
 
     $update_screen_opts->{hsize} = int($x + 1) if $screen->{hsize} <= $x;
+    print "\$update_screen_opts: " . Dumper($update_screen_opts);
+
+
     my $update_screen = $z->update("screen", $update_screen_opts);
+    print "\$update_screen: " . Dumper($update_screen);
 
     my $update_screenitem = $z->create("screenitem",
         {
@@ -277,6 +288,8 @@ sub add_to_screen {
             resourceid => $graph_id,
         }
     );
+    
+    print "\$update_screenitem: " . Dumper($update_screenitem);
 }
 
 sub create_graph {

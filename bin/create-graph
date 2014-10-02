@@ -383,7 +383,7 @@ sub create_graph {
     
         if ($create_graph->{result} && $create_graph->{result}->{graphids}) {
             my $graph_id = shift(@{$create_graph->{result}->{graphids}});
-            print "Craph_id: $graph_id\n";
+            print "Graph_id: $graph_id\n";
             return $graph_id;
         } else {
             if ($create_graph->{error}) {
@@ -475,7 +475,7 @@ sub get_screen {
         }
     );
 
-    die Dumper($search_screen) if ! $#{$search_screen->{result}} == 0;
+    die "Get_screen[$screen_name]: " . Dumper($search_screen) if ! $#{$search_screen->{result}} == 0;
     return shift(@{$search_screen->{result}});
 }
 

@@ -92,6 +92,12 @@ Add graph to screen
 
 =item --screen-x <width position on screen>
 
+Graph position in screen
+
+=item --crear-screen <screen name>
+
+Delete add screen items
+
 =back
 
 =cut
@@ -136,6 +142,7 @@ GetOptions(
     "add-to-screen=s" => \$config->{screen},
     "screen-x=s" => \$config->{'screen-x'},
     "host=s" => \$config->{host},
+    "clear-screen" => \$config->{'clear-screen'},
 );
 
 $config->{width} = 800 unless $config->{width};
@@ -276,8 +283,8 @@ sub add_to_screen {
             resourcetype => 0,
             style => 0,
             dynamic => 0,
-            height => 100,
-            width => 500,
+            height => $config->{height},
+            width => $config->{width},
             resourceid => $graph_id,
         }
     );

@@ -142,8 +142,16 @@ GetOptions(
     "add-to-screen=s" => \$config->{screen},
     "screen-x=s" => \$config->{'screen-x'},
     "host=s" => \$config->{host},
-    "clear-screen" => \$config->{'clear-screen'},
+    "clear-screen=s" => \$config->{'clear-screen'},
 );
+
+my $z = Net::Zabbix->new(
+     $config->{'zabbix-url'},
+     $config->{'zabbix-username'},
+     $config->{'zabbix-password'},
+);
+
+clear_screen($config->{'clear-screen'}) if $config->{'clear-screen'};
 
 $config->{width} = 800 unless $config->{width};
 $config->{height} = 200 unless $config->{height};
@@ -214,12 +222,6 @@ my $colors = {
 };
 
 $colors->{'theme'} = 'dark' if $config->{'dark-colors'};
-
-my $z = Net::Zabbix->new(
-     $config->{'zabbix-url'},
-     $config->{'zabbix-username'},
-     $config->{'zabbix-password'},
-);
 
 my $get_host = $z->get("host",
     {
@@ -456,6 +458,19 @@ sub get_screen {
 
     die "Get_screen['$screen_name']: " . Dumper($search_screen) if ! $#{$search_screen->{result}} == 0;
     return shift(@{$search_screen->{result}});
+}
+
+sub clear_screen {
+    my ($screen_name) = @_;
+
+    my $screen = get_screen($screen_name);
+    my $screen_id = $screen->{screenid};
+    map { $_ = $_->{screenitemid} } @{$screen->{screenitems}};
+
+    $z->delete("screenitem", $screen->{screenitems});
+
+
+    exit;
 }
 
 sub get_new_place {

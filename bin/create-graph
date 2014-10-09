@@ -502,6 +502,14 @@ sub clear_screen {
 
     $z->delete("screenitem", $screen->{screenitems});
 
+    my $update_screen = $z->update("screen",
+        {
+            screenid => $screen_id,
+            hsize => 1,
+            vsize => 1,
+        }
+    );
+
 
     exit;
 }

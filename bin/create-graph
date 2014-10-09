@@ -329,6 +329,7 @@ sub create_graph {
 
     print "Get items from this hosts\n";
     my $item_list = get_items($hostid_list);
+    print Dumper($item_list);
     #print Dumper($item_list);exit;
 
     print "Make items list\n";
@@ -346,7 +347,7 @@ sub create_graph {
             calc_fnc => $config->{calcfunction},
             drawtype => $config->{drawtype},
         };
-    } grep { $_->{name} =~ /$config->{'item-filter'}/;print $_->{name} . "\n" } @$item_list;
+    } @$item_list;
     
     #print Dumper(\@items);
     my $filter_opts = {

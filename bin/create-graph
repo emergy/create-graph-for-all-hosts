@@ -409,6 +409,7 @@ sub create_graph {
             print join(", ", @del_list) . "\n";
             print "Delete graph(s)\n";
             my $delete_graph = $z->delete('graph', \@del_list); 
+            print "\$delete_graph: " . Dumper($delete_graph) . "\n";
         }
     
         return 0 if $config->{delete};

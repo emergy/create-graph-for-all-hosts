@@ -164,6 +164,7 @@ GetOptions(
     "clear-screen=s" => \$config->{'clear-screen'},
     "screen-item-halign=s" => \$config->{'screen-item-halign'},
     "graph-type=s" => \$config->{'graph-type'},
+    "item-filter=s" => \$config->{'item-filter'},
 );
 
 my $z = Net::Zabbix->new(
@@ -186,6 +187,7 @@ $config->{'min-graph-type'} = 1 unless defined($config->{'min-graph-type'});
 $config->{'max-graph-type'} = 0 unless $config->{'max-graph-type'};
 $config->{'screen-item-halign'} = 0 unless $config->{'screen-item-halign'};
 $config->{'graph-type'} = 0 unless $config->{'graph-type'};
+$config->{'item-filter'} = '.' unless $config->{'item-filter'};
 
 usage() unless $config->{item};
 usage() unless $config->{host};
@@ -340,7 +342,7 @@ sub create_graph {
             calc_fnc => $config->{calcfunction},
             drawtype => $config->{drawtype},
         };
-    } @$item_list;
+    } grep { $_->{name} =~ /$config->{'item-filter'}/ } @$item_list;
     
     #print Dumper(\@items);
     my $filter_opts = {

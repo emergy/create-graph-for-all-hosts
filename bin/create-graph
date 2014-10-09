@@ -505,8 +505,8 @@ sub clear_screen {
     my $update_screen = $z->update("screen",
         {
             screenid => $screen_id,
-            hsize => 1,
-            vsize => 3,
+            hsize => 3,
+            vsize => 1,
         }
     );
 

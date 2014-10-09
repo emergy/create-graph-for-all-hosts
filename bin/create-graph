@@ -279,7 +279,7 @@ sub add_to_screen {
     my $x = int($config->{'screen-x'} - 1);
 
     my $screen = get_screen($config->{screen});
-    print "\$screen: " . Dumper($screen);
+    #print "\$screen: " . Dumper($screen);
 
     my $y = get_new_place($screen->{screenitems}, $graph_id);
 
@@ -294,10 +294,10 @@ sub add_to_screen {
         };
 
         $update_screen_opts->{hsize} = int($x + 1) if $screen->{hsize} <= $x;
-        print "\$update_screen_opts: " . Dumper($update_screen_opts);
+        #print "\$update_screen_opts: " . Dumper($update_screen_opts);
     
         my $update_screen = $z->update("screen", $update_screen_opts);
-        print "\$update_screen: " . Dumper($update_screen);
+        #print "\$update_screen: " . Dumper($update_screen);
     }
 
 
@@ -321,7 +321,7 @@ sub add_to_screen {
         }
     );
     
-    print "\$update_screenitem: " . Dumper($update_screenitem);
+    #print "\$update_screenitem: " . Dumper($update_screenitem);
 }
 
 sub create_graph {

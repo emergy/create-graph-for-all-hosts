@@ -94,7 +94,7 @@ Add graph to screen
 
 Graph position in screen
 
-=item --crear-screen <screen name>
+=item --clear-screen <screen name>
 
 Delete add screen items
 

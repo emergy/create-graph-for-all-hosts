@@ -98,6 +98,25 @@ Graph position in screen
 
 Delete add screen items
 
+=item --screen-item-halign <0|1|2>
+
+Specifies how the screen item must be aligned horizontally in the cell. 
+
+Possible values: 
+0 - (default) center; 
+1 - left; 
+2 - right.
+
+=item --graph-type
+
+Graph's layout type. 
+
+Possible values: 
+0 - (default) normal; 
+1 - stacked; 
+2 - pie; 
+3 - exploded.
+
 =back
 
 =cut
@@ -143,6 +162,8 @@ GetOptions(
     "screen-x=s" => \$config->{'screen-x'},
     "host=s" => \$config->{host},
     "clear-screen=s" => \$config->{'clear-screen'},
+    "screen-item-halign=s" => \$config->{'screen-item-halign'},
+    "graph-type=s" => \$config->{'graph-type'},
 );
 
 my $z = Net::Zabbix->new(
@@ -163,6 +184,8 @@ $config->{'min-graph-value'} = 0 unless $config->{'min-graph-value'};
 $config->{'max-graph-value'} = 100 unless $config->{'max-graph-value'};
 $config->{'min-graph-type'} = 1 unless defined($config->{'min-graph-type'});
 $config->{'max-graph-type'} = 0 unless $config->{'max-graph-type'};
+$config->{'screen-item-halign'} = 0 unless $config->{'screen-item-halign'};
+$config->{'graph-type'} = 0 unless $config->{'graph-type'};
 
 usage() unless $config->{item};
 usage() unless $config->{host};
@@ -288,6 +311,7 @@ sub add_to_screen {
             height => $config->{height},
             width => $config->{width},
             resourceid => $graph_id,
+            halign => $config->{'screen-item-halign'},
         }
     );
     
@@ -361,6 +385,7 @@ sub create_graph {
                 yaxismax => $config->{'max-graph-value'},
                 ymin_type => $config->{'min-graph-type'},
                 ymax_type => $config->{'max-graph-type'},
+                graphtype => $config->{'graph-type'},
             });
     
             #print Dumper($update_graph);
@@ -394,6 +419,7 @@ sub create_graph {
             yaxismax => $config->{'max-graph-value'},
             ymin_type => $config->{'min-graph-type'},
             ymax_type => $config->{'max-graph-type'},
+            graphtype => $config->{'graph-type'},
         });
     
         if ($create_graph->{result} && $create_graph->{result}->{graphids}) {

@@ -506,7 +506,7 @@ sub clear_screen {
         {
             screenid => $screen_id,
             hsize => 1,
-            vsize => 1,
+            vsize => 3,
         }
     );
 

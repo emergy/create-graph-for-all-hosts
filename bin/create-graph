@@ -251,14 +251,32 @@ my $colors = {
 };
 
 $colors->{'theme'} = 'dark' if $config->{'dark-colors'};
+my $get_host;
 
-my $get_host = $z->get("host",
-    {
-        filter => {
-            name => $config->{host},
+if ($config->{host} eq 'from-template') {
+    my $template_res = $z->get("template",
+        {
+            filter => {
+                name => $config->{template},
+            }
         }
-    }
-);
+    );
+
+    die "Template $config->{template} not found\n" if $#{$template_res->{result}} != 0;
+    
+    my $template_id = $template_res->{result}[0]->{templateid};
+    $get_host = $z->get("host", { templateids => $template_id });
+} else {
+    $get_host = $z->get("host",
+        {
+            filter => {
+                name => $config->{host},
+            }
+        }
+    );
+}
+print Dumper($get_host);
+exit;
 
 my $host_id;
 

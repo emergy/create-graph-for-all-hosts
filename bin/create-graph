@@ -202,6 +202,7 @@ usage() unless $config->{item};
 usage() unless $config->{host};
 usage() unless $config->{template};
 $config->{'graph-name'} = $config->{item} unless $config->{'graph-name'};
+$config->{'item-blacklist'} = 'ekjferifhoerjfokfporf' unless $config->{'item-blacklist'};
 
 my $colors = {
     dark => [
@@ -370,7 +371,7 @@ sub create_graph {
         };
     } grep { 
         $_->{'key_'} =~ /$config->{'item-filter'}/;
-        $_->{'key_'} !~ /$config->{'item-blacklist'}/ if $config->{'item-blacklist'};
+        $_->{'key_'} !~ /$config->{'item-blacklist'}/;
     } @$item_list;
     
     #print Dumper(\@items);

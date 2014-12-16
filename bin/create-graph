@@ -275,8 +275,6 @@ if ($config->{host} eq 'from-template') {
         }
     );
 }
-print Dumper($get_host);
-exit;
 
 my $host_id;
 

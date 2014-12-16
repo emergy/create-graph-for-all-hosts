@@ -121,6 +121,10 @@ Possible values:
 
 Filter for LLD. If regexp not work in discovery item names.
 
+=item --item-blacklist
+
+Filter for LLD. Black list regexp
+
 =back
 
 =cut
@@ -169,6 +173,7 @@ GetOptions(
     "screen-item-halign=s" => \$config->{'screen-item-halign'},
     "graph-type=s" => \$config->{'graph-type'},
     "item-filter=s" => \$config->{'item-filter'},
+    "item-blacklist=s" => \$config->{'item-blacklist'},
 );
 
 my $z = Net::Zabbix->new(
@@ -363,7 +368,10 @@ sub create_graph {
             calc_fnc => $config->{calcfunction},
             drawtype => $config->{drawtype},
         };
-    } grep { $_->{'key_'} =~ /$config->{'item-filter'}/ } @$item_list;
+    } grep { 
+        $_->{'key_'} =~ /$config->{'item-filter'}/;
+        $_->{'key_'} !~ /$config->{'item-blacklist'}/ if $config->{'item-blacklist'};
+    } @$item_list;
     
     #print Dumper(\@items);
     my $filter_opts = {

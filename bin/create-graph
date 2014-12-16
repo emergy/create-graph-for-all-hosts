@@ -361,7 +361,7 @@ sub create_graph {
         $colors->{count} = 0 if $colors->{count} > $#{$colors->{$colors->{theme}}};
         return $colors->{count};
     };
-    
+
     my @items = map {
         $_ = {
             itemid => $_->{itemid},
@@ -370,7 +370,7 @@ sub create_graph {
             drawtype => $config->{drawtype},
         };
     } grep { 
-        $_->{'key_'} =~ /$config->{'item-filter'}/;
+        $_->{'key_'} =~ /$config->{'item-filter'}/ and
         $_->{'key_'} !~ /$config->{'item-blacklist'}/;
     } @$item_list;
     

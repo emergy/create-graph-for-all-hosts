@@ -202,7 +202,7 @@ usage() unless $config->{item};
 usage() unless $config->{host};
 usage() unless $config->{template};
 $config->{'graph-name'} = $config->{item} unless $config->{'graph-name'};
-$config->{'item-blacklist'} = '' unless $config->{'item-blacklist'};
+$config->{'item-blacklist'} = 'reiufiuerhfiurefu' unless $config->{'item-blacklist'};
 
 my $colors = {
     dark => [
